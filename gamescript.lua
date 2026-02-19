@@ -1,14 +1,10 @@
--- [[ KEY SYSTEM INTEGRATION ]] --
--- This loads the key system module from your GitHub.
--- It runs in a separate environment (Wrapped) to prevent the "200 Local Variable" bug.
--- The .Init() function will PAUSE this script until the user verifies.
-
+-- [[ KEY SYSTEM LOADER ]] --
+-- This loads the key system securely without affecting variable limits.
+-- The script pauses here until the user verifies.
 local KeySystem = loadstring(game:HttpGet("https://raw.githubusercontent.com/wendigo5414-cmyk/scripts/refs/heads/main/keysystem.lua"))()
-KeySystem.Init() 
+KeySystem.Init()
 
--- [[ MAIN GAME SCRIPT ]] --
--- If the code reaches here, the user is verified.
-
+-- [[ GAME SCRIPT START ]] --
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
 local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
