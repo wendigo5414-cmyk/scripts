@@ -1,48 +1,63 @@
 --[[ 
-    SAIRO KEY SYSTEM [PREMIUM] - MODULE VERSION
+    SAIRO KEY SYSTEM [PREMIUM v2] - MODULE VERSION
     Host this file on GitHub.
 ]]
 
 local SairoLibrary = {}
 
 function SairoLibrary.Init()
-    -- SERVICES
+    -- STATE VARIABLE (This controls the pause)
+    local isVerified = false
+
+    -- [[ USER PROVIDED UI CODE BELOW (Wrapped in Init) ]] --
+
+    local KeySystem = Instance.new("ScreenGui")
+    local MainCanvas = Instance.new("CanvasGroup")
+    local Sidebar = Instance.new("Frame")
+    local ContentArea = Instance.new("Frame")
+    local Title = Instance.new("TextLabel")
+    local Glow = Instance.new("ImageLabel")
+    local CloseBtn = Instance.new("ImageButton") 
+
+    -- Sidebar Buttons
+    local TabHome = Instance.new("TextButton")
+    local TabInfo = Instance.new("TextButton")
+
+    -- Pages
+    local HomePage = Instance.new("Frame")
+    local InfoPage = Instance.new("Frame")
+
+    -- Home Elements
+    local KeyBox = Instance.new("TextBox")
+    local GetKeyBtn = Instance.new("TextButton")
+    local VerifyBtn = Instance.new("TextButton")
+    local Status = Instance.new("TextLabel")
+
+    -- Notification Container
+    local NotifContainer = Instance.new("Frame")
+    local UIListLayout_Notif = Instance.new("UIListLayout")
+
+    -- Services
     local TweenService = game:GetService("TweenService")
     local HttpService = game:GetService("HttpService")
     local UserInputService = game:GetService("UserInputService")
     local HWID = game:GetService("RbxAnalyticsService"):GetClientId()
-    local CoreGui = game:GetService("CoreGui")
 
-    -- CONFIG
+    -- Config
     local API_URL = "https://webservice-g7b9.onrender.com" 
-    local SCRIPT_URL = "No URL" -- Not needed in this module version
-    
-    -- THEME
-    local COLOR_ACCENT = Color3.fromRGB(249, 115, 22)
-    local COLOR_ACCENT_HOVER = Color3.fromRGB(251, 146, 60)
-    local COLOR_BG = Color3.fromRGB(10, 10, 10)
-    local COLOR_SIDE = Color3.fromRGB(18, 18, 18)
-    local COLOR_STROKE = Color3.fromRGB(40, 40, 40)
+    -- SCRIPT_URL removed (Handled by main script now)
 
-    -- STATE
-    local isVerified = false
+    -- THEME: PREMIUM ORANGE-RED
+    local COLOR_ACCENT = Color3.fromRGB(255, 87, 34) 
+    local COLOR_ACCENT_HOVER = Color3.fromRGB(255, 112, 67)
+    local COLOR_BG = Color3.fromRGB(12, 12, 12) 
+    local COLOR_SIDE = Color3.fromRGB(18, 18, 18) 
+    local COLOR_STROKE = Color3.fromRGB(45, 45, 45)
+    local COLOR_TEXT = Color3.fromRGB(240, 240, 240)
+    local COLOR_TEXT_DIM = Color3.fromRGB(160, 160, 160)
 
-    -- UI CONSTRUCTION
-    local KeySystem = Instance.new("ScreenGui")
-    KeySystem.Name = "SairoPremium"
-    KeySystem.Parent = CoreGui
-    KeySystem.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    -- --- HELPER FUNCTIONS ---
 
-    local MainCanvas = Instance.new("CanvasGroup")
-    MainCanvas.Name = "Main"
-    MainCanvas.Parent = KeySystem
-    MainCanvas.BackgroundColor3 = COLOR_BG
-    MainCanvas.Position = UDim2.new(0.5, -225, 0.5, -130)
-    MainCanvas.Size = UDim2.new(0, 450, 0, 260)
-    MainCanvas.BorderSizePixel = 0
-    MainCanvas.GroupTransparency = 0
-    
-    -- Helpers
     local function round(obj, radius)
         local uic = Instance.new("UICorner")
         uic.CornerRadius = UDim.new(0, radius)
@@ -60,54 +75,50 @@ function SairoLibrary.Init()
 
     local function createGradient(obj, c1, c2)
         local grad = Instance.new("UIGradient")
-        grad.Color = ColorSequence.new{ColorSequenceKeypoint.new(0, c1), ColorSequenceKeypoint.new(1, c2)}
+        grad.Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, c1),
+            ColorSequenceKeypoint.new(1, c2)
+        }
         grad.Rotation = 45
         grad.Parent = obj
     end
 
     local function animateButton(btn)
         btn.AutoButtonColor = false
-        btn.MouseEnter:Connect(function() TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = COLOR_ACCENT_HOVER}):Play() end)
-        btn.MouseLeave:Connect(function() TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = COLOR_ACCENT}):Play() end)
-        btn.MouseButton1Down:Connect(function() TweenService:Create(btn, TweenInfo.new(0.1), {Size = UDim2.new(btn.Size.X.Scale, -2, btn.Size.Y.Scale, -2)}):Play() end)
-        btn.MouseButton1Up:Connect(function() TweenService:Create(btn, TweenInfo.new(0.1), {Size = UDim2.new(btn.Size.X.Scale, 2, btn.Size.Y.Scale, 2)}):Play() end)
+        local originalSize = btn.Size
+        
+        btn.MouseEnter:Connect(function()
+            TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = COLOR_ACCENT_HOVER}):Play()
+        end)
+        btn.MouseLeave:Connect(function()
+            TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = COLOR_ACCENT}):Play()
+        end)
+        btn.MouseButton1Down:Connect(function()
+            local targetSize = UDim2.new(
+                originalSize.X.Scale * 0.95, 
+                originalSize.X.Offset * 0.95, 
+                originalSize.Y.Scale * 0.95, 
+                originalSize.Y.Offset * 0.95
+            )
+            TweenService:Create(btn, TweenInfo.new(0.1), {Size = targetSize}):Play()
+        end)
+        btn.MouseButton1Up:Connect(function()
+            TweenService:Create(btn, TweenInfo.new(0.1, Enum.EasingStyle.Bounce), {Size = originalSize}):Play()
+        end)
     end
 
-    round(MainCanvas, 12)
-    addStroke(MainCanvas, Color3.fromRGB(60, 60, 60), 1)
-
-    -- Glow
-    local Glow = Instance.new("ImageLabel")
-    Glow.Name = "Glow"
-    Glow.Parent = MainCanvas
-    Glow.BackgroundTransparency = 1
-    Glow.Position = UDim2.new(0, -100, 0, -100)
-    Glow.Size = UDim2.new(1, 200, 1, 200)
-    Glow.Image = "rbxassetid://5028857472"
-    Glow.ImageColor3 = COLOR_ACCENT
-    Glow.ImageTransparency = 0.92
-    Glow.ZIndex = 0
-
-    -- Notifications
-    local NotifContainer = Instance.new("Frame")
-    NotifContainer.Parent = KeySystem
-    NotifContainer.Position = UDim2.new(1, -220, 1, -300) 
-    NotifContainer.Size = UDim2.new(0, 200, 0, 280)
-    NotifContainer.BackgroundTransparency = 1
-    
-    local UIListLayout_Notif = Instance.new("UIListLayout")
-    UIListLayout_Notif.Parent = NotifContainer
-    UIListLayout_Notif.SortOrder = Enum.SortOrder.LayoutOrder
-    UIListLayout_Notif.VerticalAlignment = Enum.VerticalAlignment.Bottom
-    UIListLayout_Notif.Padding = UDim.new(0, 5)
+    -- --- NOTIFICATION SYSTEM ---
 
     local function Notify(title, text, duration)
         local frame = Instance.new("Frame")
+        frame.Name = "Notif"
         frame.Parent = NotifContainer
-        frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+        frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+        frame.BorderSizePixel = 0
         frame.Size = UDim2.new(1, 0, 0, 50)
         frame.BackgroundTransparency = 1 
         round(frame, 6)
+        
         local stroke = addStroke(frame, COLOR_STROKE, 1)
         
         local tLabel = Instance.new("TextLabel")
@@ -118,7 +129,7 @@ function SairoLibrary.Init()
         tLabel.Font = Enum.Font.GothamBold
         tLabel.Text = title
         tLabel.TextColor3 = COLOR_ACCENT
-        tLabel.TextSize = 12
+        tLabel.TextSize = 13
         tLabel.TextXAlignment = Enum.TextXAlignment.Left
         tLabel.TextTransparency = 1
         
@@ -129,12 +140,13 @@ function SairoLibrary.Init()
         cLabel.Size = UDim2.new(1, -20, 0, 20)
         cLabel.Font = Enum.Font.Gotham
         cLabel.Text = text
-        cLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-        cLabel.TextSize = 11
+        cLabel.TextColor3 = COLOR_TEXT_DIM
+        cLabel.TextSize = 12
         cLabel.TextXAlignment = Enum.TextXAlignment.Left
         cLabel.TextTransparency = 1
 
-        TweenService:Create(frame, TweenInfo.new(0.3), {BackgroundTransparency = 0.1}):Play()
+        -- Animate In
+        TweenService:Create(frame, TweenInfo.new(0.3), {BackgroundTransparency = 0.05}):Play()
         TweenService:Create(tLabel, TweenInfo.new(0.3), {TextTransparency = 0}):Play()
         TweenService:Create(cLabel, TweenInfo.new(0.3), {TextTransparency = 0}):Play()
         
@@ -148,188 +160,305 @@ function SairoLibrary.Init()
         end)
     end
 
-    -- Sidebar
-    local Sidebar = Instance.new("Frame")
+    -- --- UI CONSTRUCTION ---
+
+    KeySystem.Name = "SairoPremium"
+    KeySystem.Parent = game.CoreGui
+    KeySystem.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+    -- Main Canvas
+    MainCanvas.Name = "Main"
+    MainCanvas.Parent = KeySystem
+    MainCanvas.BackgroundColor3 = COLOR_BG
+    MainCanvas.Position = UDim2.new(0.5, -240, 0.5, -140)
+    MainCanvas.Size = UDim2.new(0, 480, 0, 280)
+    MainCanvas.BorderSizePixel = 0
+    MainCanvas.GroupTransparency = 0
+    round(MainCanvas, 14)
+    addStroke(MainCanvas, Color3.fromRGB(60, 60, 60), 1)
+
+    -- Close Button
+    CloseBtn.Name = "Close"
+    CloseBtn.Parent = KeySystem
+    CloseBtn.BackgroundTransparency = 1
+    CloseBtn.Position = UDim2.new(0.5, 215, 0.5, -165)
+    CloseBtn.Size = UDim2.new(0, 24, 0, 24)
+    CloseBtn.Image = "rbxassetid://3926305904"
+    CloseBtn.ImageRectOffset = Vector2.new(284, 4)
+    CloseBtn.ImageRectSize = Vector2.new(24, 24)
+    CloseBtn.ImageColor3 = Color3.fromRGB(200, 200, 200)
+    CloseBtn.ZIndex = 10
+    CloseBtn.MouseEnter:Connect(function() TweenService:Create(CloseBtn, TweenInfo.new(0.2), {ImageColor3 = Color3.fromRGB(255, 80, 80)}):Play() end)
+    CloseBtn.MouseLeave:Connect(function() TweenService:Create(CloseBtn, TweenInfo.new(0.2), {ImageColor3 = Color3.fromRGB(200, 200, 200)}):Play() end)
+    CloseBtn.MouseButton1Click:Connect(function() 
+        TweenService:Create(MainCanvas, TweenInfo.new(0.3), {Size = UDim2.new(0,0,0,0), GroupTransparency = 1}):Play()
+        TweenService:Create(CloseBtn, TweenInfo.new(0.3), {ImageTransparency = 1}):Play()
+        wait(0.3)
+        KeySystem:Destroy()
+    end)
+
+    -- Glow Effect
+    Glow.Name = "Glow"
+    Glow.Parent = MainCanvas
+    Glow.BackgroundTransparency = 1
+    Glow.Position = UDim2.new(0, -120, 0, -120)
+    Glow.Size = UDim2.new(1, 240, 1, 240)
+    Glow.Image = "rbxassetid://5028857472"
+    Glow.ImageColor3 = COLOR_ACCENT
+    Glow.ImageTransparency = 0.94
+    Glow.ZIndex = 0
+
+    -- Notification Container Setup
+    NotifContainer.Name = "Notifications"
+    NotifContainer.Parent = KeySystem
+    NotifContainer.Position = UDim2.new(1, -230, 1, -310) 
+    NotifContainer.Size = UDim2.new(0, 220, 0, 300)
+    NotifContainer.BackgroundTransparency = 1
+
+    UIListLayout_Notif.Parent = NotifContainer
+    UIListLayout_Notif.SortOrder = Enum.SortOrder.LayoutOrder
+    UIListLayout_Notif.VerticalAlignment = Enum.VerticalAlignment.Bottom
+    UIListLayout_Notif.Padding = UDim.new(0, 6)
+
+    -- Sidebar Setup
+    Sidebar.Name = "Side"
     Sidebar.Parent = MainCanvas
     Sidebar.BackgroundColor3 = COLOR_SIDE
-    Sidebar.Size = UDim2.new(0, 130, 1, 0)
+    Sidebar.Size = UDim2.new(0, 140, 1, 0)
     Sidebar.ZIndex = 2
+    addStroke(Sidebar, Color3.fromRGB(30, 30, 30), 1).ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
-    local Title = Instance.new("TextLabel")
     Title.Parent = Sidebar
     Title.BackgroundTransparency = 1
-    Title.Position = UDim2.new(0, 0, 0, 25)
+    Title.Position = UDim2.new(0, 0, 0, 30)
     Title.Size = UDim2.new(1, 0, 0, 30)
     Title.Font = Enum.Font.GothamBlack
     Title.Text = "SAIRO"
     Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Title.TextSize = 22
+    Title.TextSize = 24
+    Title.ZIndex = 2
     createGradient(Title, Color3.fromRGB(255, 255, 255), COLOR_ACCENT)
 
-    local function createTabBtn(name, yPos)
+    local function createTabBtn(name, iconId, yPos)
         local btn = Instance.new("TextButton")
         btn.Parent = Sidebar
         btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         btn.BackgroundTransparency = 1
-        btn.Position = UDim2.new(0, 10, 0, yPos)
-        btn.Size = UDim2.new(1, -20, 0, 35)
+        btn.Position = UDim2.new(0, 15, 0, yPos)
+        btn.Size = UDim2.new(1, -30, 0, 36)
         btn.Font = Enum.Font.GothamMedium
         btn.Text = "  " .. name
-        btn.TextColor3 = Color3.fromRGB(150, 150, 150)
+        btn.TextColor3 = COLOR_TEXT_DIM
         btn.TextSize = 13
         btn.TextXAlignment = Enum.TextXAlignment.Left
         btn.ZIndex = 2
-        round(btn, 6)
-        
-        btn.MouseEnter:Connect(function()
-            if btn.BackgroundTransparency == 1 then
-                TweenService:Create(btn, TweenInfo.new(0.2), {TextColor3 = Color3.new(1,1,1)}):Play()
-            end
-        end)
-        btn.MouseLeave:Connect(function()
-            if btn.BackgroundTransparency == 1 then
-                TweenService:Create(btn, TweenInfo.new(0.2), {TextColor3 = Color3.fromRGB(150,150,150)}):Play()
-            end
-        end)
+        round(btn, 8)
         return btn
     end
 
-    local TabHome = createTabBtn("Gateway", 90)
-    local TabHistory = createTabBtn("History", 135)
+    TabHome = createTabBtn("Gateway", "", 100)
+    TabInfo = createTabBtn("Information", "", 145)
 
-    -- Content
-    local ContentArea = Instance.new("Frame")
+    -- Content Area
     ContentArea.Parent = MainCanvas
     ContentArea.BackgroundTransparency = 1
-    ContentArea.Position = UDim2.new(0, 130, 0, 0)
-    ContentArea.Size = UDim2.new(1, -130, 1, 0)
+    ContentArea.Position = UDim2.new(0, 140, 0, 0)
+    ContentArea.Size = UDim2.new(1, -140, 1, 0)
     ContentArea.ZIndex = 2
 
-    local HomePage = Instance.new("Frame")
+    -- Pages
     HomePage.Parent = ContentArea
     HomePage.Size = UDim2.new(1, 0, 1, 0)
     HomePage.BackgroundTransparency = 1
+    HomePage.Visible = true
 
-    local HistoryPage = Instance.new("Frame")
-    HistoryPage.Parent = ContentArea
-    HistoryPage.Size = UDim2.new(1, 0, 1, 0)
-    HistoryPage.BackgroundTransparency = 1
-    HistoryPage.Visible = false
+    InfoPage.Parent = ContentArea
+    InfoPage.Size = UDim2.new(1, 0, 1, 0)
+    InfoPage.BackgroundTransparency = 1
+    InfoPage.Visible = false
 
-    -- Home Elements
+    -- HOME UI Elements
     local InfoTitle = Instance.new("TextLabel")
     InfoTitle.Parent = HomePage
     InfoTitle.BackgroundTransparency = 1
-    InfoTitle.Position = UDim2.new(0, 30, 0, 25)
-    InfoTitle.Size = UDim2.new(1, -60, 0, 20)
+    InfoTitle.Position = UDim2.new(0, 35, 0, 30)
+    InfoTitle.Size = UDim2.new(1, -70, 0, 20)
     InfoTitle.Font = Enum.Font.GothamBold
-    InfoTitle.Text = "ACCESS CONTROL"
-    InfoTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    InfoTitle.Text = "AUTHENTICATION"
+    InfoTitle.TextColor3 = COLOR_TEXT
     InfoTitle.TextSize = 16
     InfoTitle.TextXAlignment = Enum.TextXAlignment.Left
 
     local InfoDesc = Instance.new("TextLabel")
     InfoDesc.Parent = HomePage
     InfoDesc.BackgroundTransparency = 1
-    InfoDesc.Position = UDim2.new(0, 30, 0, 45)
-    InfoDesc.Size = UDim2.new(1, -60, 0, 30)
+    InfoDesc.Position = UDim2.new(0, 35, 0, 50)
+    InfoDesc.Size = UDim2.new(1, -70, 0, 30)
     InfoDesc.Font = Enum.Font.Gotham
-    InfoDesc.Text = "Valid key required to initialize script execution."
-    InfoDesc.TextColor3 = Color3.fromRGB(100, 100, 100)
-    InfoDesc.TextSize = 11
+    InfoDesc.Text = "A license key is required to access the features of this script."
+    InfoDesc.TextColor3 = COLOR_TEXT_DIM
+    InfoDesc.TextSize = 12
     InfoDesc.TextWrapped = true
     InfoDesc.TextXAlignment = Enum.TextXAlignment.Left
 
-    local KeyBox = Instance.new("TextBox")
     KeyBox.Parent = HomePage
     KeyBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    KeyBox.Position = UDim2.new(0, 30, 0, 90)
-    KeyBox.Size = UDim2.new(1, -60, 0, 45)
+    KeyBox.Position = UDim2.new(0, 35, 0, 100)
+    KeyBox.Size = UDim2.new(1, -70, 0, 48)
     KeyBox.Font = Enum.Font.Code
-    KeyBox.PlaceholderText = "Enter License Key..."
-    KeyBox.PlaceholderColor3 = Color3.fromRGB(60, 60, 60)
+    KeyBox.PlaceholderText = "Paste License Key..."
+    KeyBox.PlaceholderColor3 = Color3.fromRGB(70, 70, 70)
     KeyBox.Text = ""
-    KeyBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-    KeyBox.TextSize = 13
-    round(KeyBox, 8)
+    KeyBox.TextColor3 = COLOR_ACCENT
+    KeyBox.TextSize = 14
+    KeyBox.TextXAlignment = Enum.TextXAlignment.Center
+    round(KeyBox, 10)
     addStroke(KeyBox, COLOR_STROKE, 1)
 
-    local VerifyBtn = Instance.new("TextButton")
+    -- Verify Button
     VerifyBtn.Parent = HomePage
     VerifyBtn.BackgroundColor3 = COLOR_ACCENT
-    VerifyBtn.Position = UDim2.new(0, 30, 0, 150)
-    VerifyBtn.Size = UDim2.new(0.45, 0, 0, 40)
+    VerifyBtn.Position = UDim2.new(0, 35, 0, 165)
+    VerifyBtn.Size = UDim2.new(0.45, 0, 0, 42)
     VerifyBtn.Font = Enum.Font.GothamBold
-    VerifyBtn.Text = "AUTHENTICATE"
+    VerifyBtn.Text = "VERIFY KEY"
     VerifyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    VerifyBtn.TextSize = 11
-    round(VerifyBtn, 8)
+    VerifyBtn.TextSize = 12
+    round(VerifyBtn, 10)
     animateButton(VerifyBtn)
 
-    local GetKeyBtn = Instance.new("TextButton")
+    -- Get Key Button
     GetKeyBtn.Parent = HomePage
-    GetKeyBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-    GetKeyBtn.Position = UDim2.new(0.52, 0, 0, 150)
-    GetKeyBtn.Size = UDim2.new(0.40, 0, 0, 40)
+    GetKeyBtn.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
+    GetKeyBtn.Position = UDim2.new(0.52, 0, 0, 165)
+    GetKeyBtn.Size = UDim2.new(0.38, 0, 0, 42)
     GetKeyBtn.Font = Enum.Font.GothamBold
     GetKeyBtn.Text = "GET KEY"
-    GetKeyBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-    GetKeyBtn.TextSize = 11
-    round(GetKeyBtn, 8)
+    GetKeyBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
+    GetKeyBtn.TextSize = 12
+    round(GetKeyBtn, 10)
     addStroke(GetKeyBtn, COLOR_STROKE, 1)
-    
-    GetKeyBtn.MouseEnter:Connect(function() TweenService:Create(GetKeyBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(35,35,35)}):Play() end)
-    GetKeyBtn.MouseLeave:Connect(function() TweenService:Create(GetKeyBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(25,25,25)}):Play() end)
 
-    local Status = Instance.new("TextLabel")
+    GetKeyBtn.MouseEnter:Connect(function() TweenService:Create(GetKeyBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(38,38,38)}):Play() end)
+    GetKeyBtn.MouseLeave:Connect(function() TweenService:Create(GetKeyBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(28,28,28)}):Play() end)
+    GetKeyBtn.MouseButton1Click:Connect(function() 
+        TweenService:Create(GetKeyBtn, TweenInfo.new(0.1), {Size = UDim2.new(0.38*0.95,0,0,42*0.95)}):Play()
+        wait(0.1)
+        TweenService:Create(GetKeyBtn, TweenInfo.new(0.1), {Size = UDim2.new(0.38,0,0,42)}):Play()
+    end)
+
     Status.Parent = HomePage
     Status.BackgroundTransparency = 1
-    Status.Position = UDim2.new(0, 30, 1, -30)
-    Status.Size = UDim2.new(1, -60, 0, 20)
+    Status.Position = UDim2.new(0, 35, 1, -35)
+    Status.Size = UDim2.new(1, -70, 0, 20)
     Status.Font = Enum.Font.GothamBold
-    Status.Text = "SYSTEM READY"
-    Status.TextColor3 = Color3.fromRGB(60, 60, 60)
+    Status.Text = "WAITING FOR INPUT"
+    Status.TextColor3 = Color3.fromRGB(80, 80, 80)
     Status.TextSize = 10
-    Status.TextXAlignment = Enum.TextXAlignment.Left
+    Status.TextXAlignment = Enum.TextXAlignment.Center
 
-    -- History
-    local HistoryScroll = Instance.new("ScrollingFrame")
-    HistoryScroll.Parent = HistoryPage
-    HistoryScroll.BackgroundTransparency = 1
-    HistoryScroll.Position = UDim2.new(0, 20, 0, 60)
-    HistoryScroll.Size = UDim2.new(1, -40, 1, -70)
-    HistoryScroll.ScrollBarThickness = 2
-    HistoryScroll.BorderSizePixel = 0
-    
-    local HistoryTitle = Instance.new("TextLabel")
-    HistoryTitle.Parent = HistoryPage
-    HistoryTitle.BackgroundTransparency = 1
-    HistoryTitle.Position = UDim2.new(0, 25, 0, 20)
-    HistoryTitle.Size = UDim2.new(1, 0, 0, 30)
-    HistoryTitle.Font = Enum.Font.GothamBold
-    HistoryTitle.Text = "RECENT KEYS"
-    HistoryTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-    HistoryTitle.TextSize = 14
-    HistoryTitle.TextXAlignment = Enum.TextXAlignment.Left
+    -- INFO PAGE Elements
+    local InfoScroll = Instance.new("ScrollingFrame")
+    InfoScroll.Parent = InfoPage
+    InfoScroll.BackgroundTransparency = 1
+    InfoScroll.Position = UDim2.new(0, 20, 0, 20)
+    InfoScroll.Size = UDim2.new(1, -40, 1, -40)
+    InfoScroll.ScrollBarThickness = 2
+    InfoScroll.BorderSizePixel = 0
 
-    local HistoryLayout = Instance.new("UIListLayout")
-    HistoryLayout.Parent = HistoryScroll
-    HistoryLayout.Padding = UDim.new(0, 8)
+    local InfoHeader = Instance.new("TextLabel")
+    InfoHeader.Parent = InfoScroll
+    InfoHeader.BackgroundTransparency = 1
+    InfoHeader.Size = UDim2.new(1, 0, 0, 30)
+    InfoHeader.Font = Enum.Font.GothamBold
+    InfoHeader.Text = "INFORMATION"
+    InfoHeader.TextColor3 = COLOR_TEXT
+    InfoHeader.TextSize = 16
+    InfoHeader.TextXAlignment = Enum.TextXAlignment.Left
 
-    -- LOGIC
+    local UIList_Info = Instance.new("UIListLayout")
+    UIList_Info.Parent = InfoScroll
+    UIList_Info.SortOrder = Enum.SortOrder.LayoutOrder
+    UIList_Info.Padding = UDim.new(0, 10)
+
+    local function createLinkCard(title, subtitle, icon, callback)
+        local card = Instance.new("TextButton")
+        card.Parent = InfoScroll
+        card.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
+        card.Size = UDim2.new(1, 0, 0, 60)
+        card.AutoButtonColor = false
+        card.Text = ""
+        round(card, 10)
+        addStroke(card, COLOR_STROKE, 1)
+        
+        local cTitle = Instance.new("TextLabel")
+        cTitle.Parent = card
+        cTitle.BackgroundTransparency = 1
+        cTitle.Position = UDim2.new(0, 15, 0, 12)
+        cTitle.Size = UDim2.new(1, -30, 0, 20)
+        cTitle.Font = Enum.Font.GothamBold
+        cTitle.Text = title
+        cTitle.TextColor3 = COLOR_TEXT
+        cTitle.TextSize = 14
+        cTitle.TextXAlignment = Enum.TextXAlignment.Left
+        
+        local cSub = Instance.new("TextLabel")
+        cSub.Parent = card
+        cSub.BackgroundTransparency = 1
+        cSub.Position = UDim2.new(0, 15, 0, 32)
+        cSub.Size = UDim2.new(1, -30, 0, 15)
+        cSub.Font = Enum.Font.Gotham
+        cSub.Text = subtitle
+        cSub.TextColor3 = COLOR_TEXT_DIM
+        cSub.TextSize = 11
+        cSub.TextXAlignment = Enum.TextXAlignment.Left
+        
+        local cIcon = Instance.new("ImageLabel")
+        cIcon.Parent = card
+        cIcon.BackgroundTransparency = 1
+        cIcon.Position = UDim2.new(1, -40, 0.5, -10)
+        cIcon.Size = UDim2.new(0, 20, 0, 20)
+        cIcon.Image = icon or "rbxassetid://7072719659" 
+        cIcon.ImageColor3 = COLOR_ACCENT
+        
+        card.MouseEnter:Connect(function()
+            TweenService:Create(card, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(30, 30, 30)}):Play()
+        end)
+        card.MouseLeave:Connect(function()
+            TweenService:Create(card, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(22, 22, 22)}):Play()
+        end)
+        card.MouseButton1Click:Connect(callback)
+    end
+
+    createLinkCard("Discord Server", "Join our community for support.", "rbxassetid://16123490977", function()
+        setclipboard("https://discord.gg/yourinvite")
+        Notify("Discord", "Invite copied to clipboard.", 3)
+    end)
+
+    createLinkCard("Website", "Visit the official site.", "rbxassetid://16123492577", function()
+        setclipboard("https://yourwebsite.com")
+        Notify("Website", "Link copied to clipboard.", 3)
+    end)
+
+    createLinkCard("Credits", "Developed by Sairo Team.", "rbxassetid://16123492213", function()
+        Notify("Credits", "Script by Sairo Devs", 3)
+    end)
+
+    -- --- LOGIC & FUNCTIONS ---
+
     local function switchTab(page)
         HomePage.Visible = false
-        HistoryPage.Visible = false
+        InfoPage.Visible = false
         page.Visible = true
         
-        TabHome.TextColor3 = Color3.fromRGB(150, 150, 150)
-        TabHistory.TextColor3 = Color3.fromRGB(150, 150, 150)
+        TabHome.TextColor3 = COLOR_TEXT_DIM
+        TabInfo.TextColor3 = COLOR_TEXT_DIM
         TabHome.BackgroundTransparency = 1
-        TabHistory.BackgroundTransparency = 1
+        TabInfo.BackgroundTransparency = 1
         
-        local activeBtn = (page == HomePage) and TabHome or TabHistory
-        activeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        TweenService:Create(activeBtn, TweenInfo.new(0.3), {BackgroundTransparency = 0.95}):Play()
+        local activeBtn = (page == HomePage) and TabHome or TabInfo
+        activeBtn.TextColor3 = COLOR_TEXT
+        TweenService:Create(activeBtn, TweenInfo.new(0.3), {BackgroundTransparency = 0.92}):Play()
     end
 
     local function setStatus(text, color)
@@ -338,7 +467,8 @@ function SairoLibrary.Init()
     end
 
     local function getKey()
-        setStatus("CONTACTING SERVER...", Color3.fromRGB(255, 255, 255))
+        setStatus("CONTACTING SERVER...", COLOR_TEXT)
+        
         local url = API_URL .. "/api/init"
         local body = HttpService:JSONEncode({hwid = HWID})
         
@@ -358,26 +488,32 @@ function SairoLibrary.Init()
             local data = HttpService:JSONDecode(response.Body)
             if data.url then
                 setclipboard(data.url)
-                setStatus("LINK COPIED TO CLIPBOARD", Color3.fromRGB(74, 222, 128))
-                Notify("Link Generated", "Copied to clipboard.", 4)
+                setStatus("LINK COPIED TO CLIPBOARD", Color3.fromRGB(100, 255, 100))
+                Notify("Link Generated", "Key link copied to clipboard.", 4)
             else
-                setStatus("SERVER ERROR", Color3.fromRGB(248, 113, 113))
-                Notify("Error", "Invalid server response.", 4)
+                setStatus("SERVER ERROR", Color3.fromRGB(255, 80, 80))
+                Notify("Error", "Invalid response from server.", 4)
             end
         else
-            setStatus("CONNECTION FAILED", Color3.fromRGB(248, 113, 113))
-            Notify("Network Error", "Check your connection.", 4)
+            setStatus("CONNECTION FAILED", Color3.fromRGB(255, 80, 80))
+            Notify("Connection Error", "Could not reach server.", 4)
         end
+    end
+
+    local function closeUI()
+        TweenService:Create(MainCanvas, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0), GroupTransparency = 1}):Play()
+        task.wait(0.4)
+        KeySystem:Destroy()
     end
 
     local function verify(inputKey)
         if inputKey == "" then 
-            Notify("Input Required", "Paste key to continue.", 3)
+            Notify("Input Required", "Please paste your key.", 3)
             return 
         end
         
-        setStatus("AUTHENTICATING...", Color3.fromRGB(255, 255, 255))
-        VerifyBtn.Text = "..."
+        setStatus("AUTHENTICATING...", COLOR_TEXT)
+        VerifyBtn.Text = "CHECKING..."
         
         local url = API_URL .. "/api/verify-key?key=" .. inputKey .. "&hwid=" .. HWID
         local success, response = pcall(function() return game:HttpGet(url) end)
@@ -385,83 +521,44 @@ function SairoLibrary.Init()
         if success then
             local data = HttpService:JSONDecode(response)
             if data.status == "valid" then
-                setStatus("GRANTED", Color3.fromRGB(74, 222, 128))
-                Notify("Authenticated", "Loading script...", 5)
+                setStatus("ACCESS GRANTED", Color3.fromRGB(100, 255, 100))
+                Notify("Success", "Key verified. Loading script...", 4)
                 
                 if writefile then writefile("Sairo_Last.txt", inputKey) end
                 
-                -- ANIMATE OUT
-                TweenService:Create(MainCanvas, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {GroupTransparency = 1}):Play()
-                TweenService:Create(MainCanvas, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0)}):Play()
+                closeUI()
                 
-                task.wait(0.5)
-                KeySystem:Destroy()
-                
-                -- UNLOCK
-                isVerified = true
+                -- [[ IMPORTANT: SIGNAL COMPLETION ]] --
+                isVerified = true 
             elseif data.status == "invalid_hwid" then
-                 setStatus("HWID MISMATCH", Color3.fromRGB(248, 113, 113))
-                 Notify("Error", "Key invalid for this device.", 5)
+                 setStatus("HWID MISMATCH", Color3.fromRGB(255, 80, 80))
+                 Notify("Access Denied", "Key is linked to another device.", 5)
             else
-                setStatus("INVALID KEY", Color3.fromRGB(248, 113, 113))
-                Notify("Error", "Key invalid or expired.", 4)
+                setStatus("INVALID KEY", Color3.fromRGB(255, 80, 80))
+                Notify("Access Denied", "Key is invalid or expired.", 4)
             end
         else
-            setStatus("CONNECTION FAILED", Color3.fromRGB(248, 113, 113))
+            setStatus("CONNECTION FAILED", Color3.fromRGB(255, 80, 80))
             Notify("Error", "Server unreachable.", 4)
         end
-        VerifyBtn.Text = "AUTHENTICATE"
+        VerifyBtn.Text = "VERIFY KEY"
     end
 
-    local function loadHistory()
-        for _, child in pairs(HistoryScroll:GetChildren()) do
-            if child:IsA("Frame") then child:Destroy() end
-        end
-        
-        if readfile and pcall(function() readfile("Sairo_Last.txt") end) then
-             local lastKey = readfile("Sairo_Last.txt")
-             local card = Instance.new("Frame")
-             card.Parent = HistoryScroll
-             card.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-             card.Size = UDim2.new(1, 0, 0, 45)
-             round(card, 8)
-             addStroke(card, Color3.fromRGB(40, 40, 40), 1)
-             
-             local kLabel = Instance.new("TextLabel")
-             kLabel.Parent = card
-             kLabel.BackgroundTransparency = 1
-             kLabel.Position = UDim2.new(0, 15, 0, 0)
-             kLabel.Size = UDim2.new(1, -30, 1, 0)
-             kLabel.Font = Enum.Font.Code
-             kLabel.Text = lastKey
-             kLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-             kLabel.TextSize = 12
-             kLabel.TextXAlignment = Enum.TextXAlignment.Left
-             
-             local copyBtn = Instance.new("TextButton")
-             copyBtn.Parent = card
-             copyBtn.Size = UDim2.new(1,0,1,0)
-             copyBtn.BackgroundTransparency = 1
-             copyBtn.Text = ""
-             copyBtn.MouseButton1Click:Connect(function()
-                 setclipboard(lastKey)
-                 Notify("History", "Key copied.", 2)
-             end)
-        end
-    end
+    -- --- EVENTS & INIT ---
 
-    -- CONNECT EVENTS
     GetKeyBtn.MouseButton1Click:Connect(getKey)
     VerifyBtn.MouseButton1Click:Connect(function() verify(KeyBox.Text) end)
-    TabHome.MouseButton1Click:Connect(function() switchTab(HomePage) end)
-    TabHistory.MouseButton1Click:Connect(function() switchTab(HistoryPage); loadHistory() end)
 
-    -- DRAG
+    TabHome.MouseButton1Click:Connect(function() switchTab(HomePage) end)
+    TabInfo.MouseButton1Click:Connect(function() switchTab(InfoPage) end)
+
     local dragging, dragInput, dragStart, startPos
     local function update(input)
         local delta = input.Position - dragStart
         MainCanvas.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        CloseBtn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X + 225, startPos.Y.Scale, startPos.Y.Offset + delta.Y - 130)
     end
+
     MainCanvas.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
@@ -473,21 +570,18 @@ function SairoLibrary.Init()
     MainCanvas.InputChanged:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseMovement then dragInput = input end end)
     UserInputService.InputChanged:Connect(function(input) if input == dragInput and dragging then update(input) end end)
 
-    -- INIT UI
     switchTab(HomePage)
-    
-    -- AUTO LOAD
+    CloseBtn.Position = UDim2.new(MainCanvas.Position.X.Scale, MainCanvas.Position.X.Offset + 225, MainCanvas.Position.Y.Scale, MainCanvas.Position.Y.Offset - 130)
+
     if readfile and pcall(function() readfile("Sairo_Last.txt") end) then
         local saved = readfile("Sairo_Last.txt")
         KeyBox.Text = saved
         task.delay(0.5, function() verify(saved) end)
     end
-
-    -- YIELD (THE IMPORTANT PART)
-    -- This halts the thread until Verified is true
-    repeat task.wait(0.1) until isVerified
     
-    return true
+    -- [[ YIELDING LOGIC ]] --
+    -- This halts the gamescript until verification is complete.
+    repeat task.wait(0.1) until isVerified
 end
 
 return SairoLibrary
